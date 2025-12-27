@@ -1,0 +1,27 @@
+{
+  "name": "smart-city-bms",
+  "version": "4.0.0",
+  "description": "Modern Smart City Building Management System with persistent data storage",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "wrangler pages dev dist",
+    "deploy": "npm run build && wrangler pages deploy dist",
+    "db:migrate": "wrangler d1 migrations apply smart-city-db --local",
+    "db:migrate:prod": "wrangler d1 migrations apply smart-city-db",
+    "dev:sandbox": "wrangler pages dev dist --d1=smart-city-db --local --ip 0.0.0.0 --port 3000"
+  },
+  "dependencies": {
+    "hono": "^4.0.0",
+    "jose": "^5.0.0",
+    "bcryptjs": "^2.4.3"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241230.0",
+    "@hono/vite-cloudflare-pages": "^0.4.2",
+    "vite": "^6.0.0",
+    "wrangler": "^3.95.0",
+    "typescript": "^5.0.0"
+  }
+}
