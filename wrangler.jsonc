@@ -4,23 +4,24 @@
   "compatibility_date": "2024-12-18",
   "pages_build_output_dir": "./dist",
   "compatibility_flags": ["nodejs_compat"],
-  
+  // 1. قاعدة البيانات
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "smart-city-db",
-      "database_id": "your-database-id"
+      "database_id": "2a35f6b6-1188-431d-8682-c19e927c44e0"
     }
   ],
   
+  // 2. الذاكرة المؤقتة
   "kv_namespaces": [
     {
       "binding": "CACHE",
-      "id": "your-kv-namespace-id",
-      "preview_id": "your-kv-preview-id"
+      "id": "88fe8344ff164f20bf5fc7d9e6186d74"
     }
   ],
   
+  // 3. تخزين الملفات
   "r2_buckets": [
     {
       "binding": "STORAGE",
