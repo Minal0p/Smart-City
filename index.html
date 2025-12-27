@@ -961,22 +961,26 @@
             const transCard = document.getElementById('hosp-transformer');
             const genCard = document.getElementById('hosp-generator');
 
+            // Permission Check
+            const isAdmin = state.currentUser?.role === 'admin';
+            const pointerClass = isAdmin ? "cursor-pointer" : "cursor-not-allowed opacity-50";
+
             if (btnGrid && transCard) {
                 if (state.hospital.gridActive) {
-                    btnGrid.className = "p-2 bg-slate-700 rounded hover:bg-red-900/50 text-emerald-400";
+                    btnGrid.className = `p-2 bg-slate-700 rounded ${isAdmin ? 'hover:bg-red-900/50' : ''} text-emerald-400 ${pointerClass}`;
                     transCard.className = "bg-slate-800 border border-emerald-500/50 p-4 rounded-xl w-full flex justify-between items-center transition-all shadow-[0_0_15px_rgba(16,185,129,0.1)]";
                 } else {
-                    btnGrid.className = "p-2 bg-slate-700 rounded hover:bg-emerald-900/50 text-red-500";
+                    btnGrid.className = `p-2 bg-slate-700 rounded ${isAdmin ? 'hover:bg-emerald-900/50' : ''} text-red-500 ${pointerClass}`;
                     transCard.className = "bg-slate-900 border border-slate-700 p-4 rounded-xl w-full flex justify-between items-center opacity-60";
                 }
             }
 
             if (btnGen && genCard) {
                 if (state.hospital.genActive) {
-                    btnGen.className = "p-2 bg-emerald-600 rounded hover:bg-red-600 text-white animate-pulse";
+                    btnGen.className = `p-2 bg-emerald-600 rounded ${isAdmin ? 'hover:bg-red-600' : ''} text-white animate-pulse ${pointerClass}`;
                     genCard.className = "bg-slate-800 border border-emerald-500/50 p-4 rounded-xl w-full flex justify-between items-center transition-all shadow-[0_0_15px_rgba(16,185,129,0.1)]";
                 } else {
-                    btnGen.className = "p-2 bg-slate-700 rounded hover:bg-emerald-900/50 text-slate-500";
+                    btnGen.className = `p-2 bg-slate-700 rounded ${isAdmin ? 'hover:bg-emerald-900/50' : ''} text-slate-500 ${pointerClass}`;
                     genCard.className = "bg-slate-900 border border-slate-700 p-4 rounded-xl w-full flex justify-between items-center opacity-60";
                 }
             }
@@ -1020,6 +1024,12 @@
         }
 
         function toggleHospSource(source) {
+            // Permission Check
+            if (state.currentUser?.role !== 'admin') {
+                alert("Restricted: Hospital power controls are for Admins only.");
+                return;
+            }
+
             if (source === 'grid') {
                 state.hospital.gridActive = !state.hospital.gridActive;
                 showAlert(state.hospital.gridActive ? "Grid Restored" : "Grid Failure Simulated", 'hospital');
