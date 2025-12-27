@@ -1,0 +1,1235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart City BMS v3.3 - Admin & Renewables</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        
+        /* Range Slider Styling */
+        input[type=range] {
+            -webkit-appearance: none; 
+            background: transparent; 
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 12px;
+            width: 12px;
+            border-radius: 50%;
+            background: #3b82f6; 
+            cursor: pointer;
+            margin-top: -3px; 
+        }
+        input[type=range]:disabled::-webkit-slider-thumb {
+            background: #475569; 
+            cursor: not-allowed;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #334155; 
+            border-radius: 3px;
+        }
+        
+        /* Animations */
+        @keyframes pulse-flow {
+            0% { opacity: 0.3; }
+            50% { opacity: 1; }
+            100% { opacity: 0.3; }
+        }
+        .animate-spin-slow {
+            animation: spin 8s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen selection:bg-blue-500/30 overflow-x-hidden">
+
+    <!-- LOGIN SCREEN -->
+    <div id="login-screen" class="fixed inset-0 z-[100] bg-slate-950 flex flex-col items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 p-8 rounded-2xl shadow-2xl w-full max-w-md">
+            <div class="flex flex-col items-center mb-8">
+                <div class="bg-blue-600 p-3 rounded-xl mb-4 shadow-lg shadow-blue-900/30">
+                    <i data-lucide="shield-check" class="text-white w-8 h-8"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-white">Smart City BMS</h1>
+                <p class="text-slate-400 text-sm">Sustainable Energy Grid</p>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">Username</label>
+                    <input id="login-user" type="text" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500 transition-colors" placeholder="Enter username">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">Password</label>
+                    <input id="login-pass" type="password" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500 transition-colors" placeholder="••••••••">
+                </div>
+                
+                <button onclick="attemptLogin()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium py-2.5 rounded-lg transition-all shadow-lg shadow-blue-900/20 mt-2">
+                    Sign In
+                </button>
+                
+                <div class="relative py-2">
+                    <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-800"></div></div>
+                    <div class="relative flex justify-center text-xs uppercase"><span class="bg-slate-900 px-2 text-slate-500">Or</span></div>
+                </div>
+
+                <button onclick="loginAsGuest()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2">
+                    <i data-lucide="eye" class="w-4 h-4"></i> Monitor as Guest
+                </button>
+            </div>
+            
+            <div class="mt-6 text-center">
+                <p class="text-[10px] text-slate-600">Default Admin: <span class="font-mono text-slate-500">Mina Hanna / Mina-ET5-2025</span></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADMIN PANEL MODAL (Restored) -->
+    <div id="admin-panel" class="hidden fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 w-full max-w-2xl rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-800/50">
+                <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                    <i data-lucide="users" class="w-5 h-5 text-blue-400"></i> Admin User Management
+                </h2>
+                <button onclick="closeAdminPanel()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            
+            <div class="p-6 overflow-y-auto">
+                <!-- Add User Form -->
+                <div class="bg-slate-950/50 p-4 rounded-lg border border-slate-800 mb-6">
+                    <h3 class="text-sm font-semibold text-slate-300 mb-3">Add New Member</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                        <input id="new-username" type="text" placeholder="Username" class="bg-slate-900 border border-slate-700 rounded px-3 py-2 text-xs focus:border-blue-500 outline-none">
+                        <input id="new-password" type="text" placeholder="Password" class="bg-slate-900 border border-slate-700 rounded px-3 py-2 text-xs focus:border-blue-500 outline-none">
+                        <select id="new-unit" class="bg-slate-900 border border-slate-700 rounded px-3 py-2 text-xs text-slate-300 focus:border-blue-500 outline-none">
+                            <option value="">Assign Unit...</option>
+                            <!-- Populated by JS -->
+                        </select>
+                        <button onclick="addMember()" class="bg-emerald-600 hover:bg-emerald-500 text-white rounded px-3 py-2 text-xs font-medium transition-colors">Add User</button>
+                    </div>
+                </div>
+
+                <!-- User List -->
+                <h3 class="text-sm font-semibold text-slate-300 mb-3">Current Users</h3>
+                <div class="border border-slate-700 rounded-lg overflow-hidden">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-800 text-slate-400">
+                            <tr>
+                                <th class="p-3">Username</th>
+                                <th class="p-3">Role</th>
+                                <th class="p-3">Assigned Unit</th>
+                                <th class="p-3 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="user-list-body" class="divide-y divide-slate-800 bg-slate-900">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- APP CONTAINER -->
+    <div id="app" class="hidden flex flex-col min-h-screen">
+        
+        <!-- Navbar -->
+        <header class="bg-slate-900 border-b border-slate-800 px-6 py-4 flex items-center justify-between sticky top-0 z-50 shadow-xl">
+            <div class="flex items-center gap-3">
+                <div class="bg-blue-600 p-2 rounded-lg shadow-lg shadow-blue-900/20">
+                    <i data-lucide="zap" class="text-white w-5 h-5"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight">Smart City <span class="text-blue-400">BMS</span></h1>
+                    <p class="text-xs text-slate-400">Sustainable Grid Management v3.3</p>
+                </div>
+            </div>
+
+            <!-- Global Alert Banner -->
+            <div id="alert-banner" class="hidden absolute left-1/2 -translate-x-1/2 px-6 py-2.5 rounded-full border text-sm font-bold shadow-2xl flex items-center gap-2 z-50 transition-all duration-300">
+                <i id="alert-icon" data-lucide="alert-triangle" class="w-4 h-4"></i>
+                <span id="alert-message"></span>
+            </div>
+
+            <div class="flex items-center gap-6">
+                <!-- User Profile & Controls -->
+                <div class="flex items-center gap-3">
+                    <div class="text-right hidden md:block">
+                        <p id="user-display-name" class="text-sm font-medium text-white">Guest</p>
+                        <p id="user-role-badge" class="text-[10px] uppercase tracking-wider text-slate-400">Monitor Only</p>
+                    </div>
+                    
+                    <!-- Admin Button -->
+                    <button id="admin-panel-btn" onclick="openAdminPanel()" class="hidden p-2 bg-slate-800 hover:bg-slate-700 text-blue-400 rounded-lg border border-slate-700 transition-colors" title="Admin Users">
+                        <i data-lucide="users" class="w-4 h-4"></i>
+                    </button>
+
+                    <button onclick="logout()" class="p-2 bg-slate-800 hover:bg-red-900/30 text-slate-400 hover:text-red-400 rounded-lg border border-slate-700 transition-colors" title="Logout">
+                        <i data-lucide="log-out" class="w-4 h-4"></i>
+                    </button>
+                </div>
+
+                <div class="h-8 w-px bg-slate-800"></div>
+
+                <!-- Time -->
+                <div class="flex items-center gap-3 bg-slate-800/50 px-4 py-2 rounded-lg border border-slate-700 min-w-[140px] justify-center">
+                    <div id="time-icon-wrapper">
+                        <i data-lucide="sun" class="w-4 h-4 text-yellow-400"></i>
+                    </div>
+                    <span id="time-display" class="font-mono text-lg font-bold w-12 text-center">12:00</span>
+                </div>
+
+                <!-- Sim Controls -->
+                <div class="flex items-center gap-2 bg-slate-800 p-1 rounded-lg border border-slate-700">
+                    <button onclick="togglePlay()" class="p-2 hover:bg-slate-700 rounded text-slate-300 transition-colors" title="Play/Pause">
+                        <div id="play-icon-wrapper" class="w-4 h-4 flex items-center justify-center">
+                            <i data-lucide="pause" class="w-4 h-4"></i>
+                        </div>
+                    </button>
+                    <button onclick="toggleSpeed()" id="speed-btn" class="p-2 rounded text-slate-300 transition-colors hover:bg-slate-700" title="Toggle Speed">
+                        <i data-lucide="fast-forward" class="w-4 h-4"></i>
+                    </button>
+                    <button onclick="resetSimulation()" class="p-2 hover:bg-slate-700 rounded text-slate-300 transition-colors" title="Reset">
+                        <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main class="p-6 max-w-[1600px] mx-auto w-full grid grid-cols-12 gap-6 flex-1">
+            
+            <!-- Top Stats Row -->
+            <div class="col-span-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                <!-- Net Grid Draw -->
+                <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl flex items-center justify-between shadow-lg">
+                    <div>
+                        <p class="text-slate-400 text-sm font-medium">Net Grid Draw</p>
+                        <div class="flex items-baseline gap-1 mt-1">
+                            <h3 id="stat-net-load" class="text-xl font-bold text-emerald-500">0</h3>
+                            <span class="text-slate-500 text-xs">kW</span>
+                        </div>
+                        <p id="stat-net-sub" class="text-[10px] mt-1 text-slate-500">Initializing...</p>
+                    </div>
+                    <div class="p-2 rounded-lg bg-emerald-500/20">
+                        <i data-lucide="activity" class="w-5 h-5 text-emerald-500"></i>
+                    </div>
+                </div>
+
+                <!-- Renewables (Clickable for Detail) -->
+                <div onclick="openDetailView('renewables')" class="bg-slate-800 border border-slate-700 p-4 rounded-xl flex items-center justify-between shadow-lg cursor-pointer hover:bg-slate-700/50 transition-colors group">
+                    <div>
+                        <p class="text-slate-400 text-sm font-medium group-hover:text-emerald-400 transition-colors">Renewables</p>
+                        <div class="flex items-baseline gap-1 mt-1">
+                            <h3 id="stat-renewable" class="text-xl font-bold text-emerald-400">0</h3>
+                            <span class="text-slate-500 text-xs">kW</span>
+                        </div>
+                        <div class="flex gap-2 text-[10px] text-slate-500 mt-1">
+                            <span class="flex items-center gap-1"><i data-lucide="sun" class="w-3 h-3"></i> <span id="val-solar">0</span></span>
+                            <span class="flex items-center gap-1"><i data-lucide="wind" class="w-3 h-3"></i> <span id="val-wind">0</span></span>
+                        </div>
+                    </div>
+                    <div class="p-2 rounded-lg bg-emerald-400/20">
+                        <i data-lucide="leaf" class="w-5 h-5 text-emerald-400"></i>
+                    </div>
+                </div>
+
+                <!-- Battery Storage (BESS) -->
+                <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl flex items-center justify-between shadow-lg relative overflow-hidden">
+                    <div class="z-10 relative">
+                        <p class="text-slate-400 text-sm font-medium">BESS Level</p>
+                        <div class="flex items-baseline gap-1 mt-1">
+                            <h3 id="stat-bess" class="text-xl font-bold text-cyan-400">0</h3>
+                            <span class="text-slate-500 text-xs">kWh</span>
+                        </div>
+                        <p id="stat-bess-status" class="text-[10px] mt-1 text-cyan-300 font-mono">STANDBY</p>
+                    </div>
+                    <div class="p-2 rounded-lg bg-cyan-400/20 z-10 relative">
+                        <i data-lucide="battery-charging" class="w-5 h-5 text-cyan-400"></i>
+                    </div>
+                    <div id="bess-fill" class="absolute bottom-0 left-0 w-full bg-cyan-500/10 transition-all duration-1000" style="height: 50%"></div>
+                </div>
+
+                <!-- Carbon Footprint -->
+                <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl flex items-center justify-between shadow-lg">
+                    <div>
+                        <p class="text-slate-400 text-sm font-medium">CO2 Emission</p>
+                        <div class="flex items-baseline gap-1 mt-1">
+                            <h3 id="stat-co2" class="text-xl font-bold text-slate-300">0</h3>
+                            <span class="text-slate-500 text-xs">kg/h</span>
+                        </div>
+                        <p id="stat-co2-sub" class="text-[10px] mt-1 text-slate-500">Intensity: Low</p>
+                    </div>
+                    <div class="p-2 rounded-lg bg-slate-700/50">
+                        <i data-lucide="cloud" class="w-5 h-5 text-slate-300"></i>
+                    </div>
+                </div>
+
+                <!-- Cost -->
+                <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl flex items-center justify-between shadow-lg">
+                    <div>
+                        <p class="text-slate-400 text-sm font-medium">Net Cost</p>
+                        <div class="flex items-baseline gap-1 mt-1">
+                            <h3 id="stat-cost" class="text-xl font-bold text-slate-300">$0</h3>
+                            <span class="text-slate-500 text-xs">/hr</span>
+                        </div>
+                        <p class="text-[10px] mt-1 text-slate-500">@ $0.12/kWh</p>
+                    </div>
+                    <div class="p-2 rounded-lg bg-slate-700/50">
+                        <i data-lucide="landmark" class="w-5 h-5 text-slate-300"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DASHBOARD VIEW CONTAINER -->
+            <div id="dashboard-view" class="col-span-12 grid grid-cols-12 gap-6 contents">
+                
+                <!-- Chart Section -->
+                <div class="col-span-12 lg:col-span-8 bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-lg min-h-[300px] flex flex-col">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-lg font-semibold flex items-center gap-2 text-white">
+                            <i data-lucide="bar-chart-3" class="w-5 h-5 text-blue-500"></i>
+                            Grid Telemetry
+                        </h2>
+                        
+                        <!-- Weather Toggle -->
+                        <div class="flex bg-slate-800 rounded-lg p-1 border border-slate-700" id="weather-controls"></div>
+                    </div>
+                    
+                    <!-- Chart SVG -->
+                    <div class="flex-1 w-full relative group h-[250px]">
+                        <svg id="grid-chart" viewBox="0 0 1000 300" preserveAspectRatio="none" class="w-full h-full overflow-visible"></svg>
+                        
+                        <!-- Legend -->
+                        <div class="absolute top-2 right-2 flex gap-4 bg-slate-900/80 p-2 rounded text-xs border border-slate-700 pointer-events-none">
+                            <div class="flex items-center gap-1.5 text-blue-400">
+                                <div class="w-3 h-0.5 bg-blue-500"></div> Consumption
+                            </div>
+                            <div class="flex items-center gap-1.5 text-emerald-400">
+                                <div class="w-3 h-0.5 bg-emerald-500"></div> Renewables
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Control / Info Panel -->
+                <div class="col-span-12 lg:col-span-4 flex flex-col gap-6">
+                    
+                    <!-- System Log (New Feature) -->
+                    <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-lg flex flex-col gap-2 h-40">
+                        <div class="flex items-center justify-between border-b border-slate-700 pb-2">
+                            <h2 class="text-sm font-semibold text-white flex items-center gap-2">
+                                <i data-lucide="scroll-text" class="w-4 h-4 text-slate-400"></i> System Logs
+                            </h2>
+                            <span class="text-[10px] text-slate-500">Live</span>
+                        </div>
+                        <div id="system-logs" class="flex-1 overflow-y-auto space-y-2 text-[10px] font-mono text-slate-400 pr-2">
+                            <div class="text-emerald-500">>> System Initialized successfully</div>
+                        </div>
+                    </div>
+
+                    <!-- AI Analyst -->
+                    <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-lg flex flex-col gap-4">
+                        <div class="flex items-center justify-between">
+                            <h2 class="text-lg font-semibold text-white flex items-center gap-2">
+                                <i data-lucide="bot" class="w-5 h-5 text-indigo-400"></i>
+                                AI Grid Analyst
+                            </h2>
+                            <div class="bg-indigo-500/10 text-indigo-300 px-2 py-0.5 rounded text-xs border border-indigo-500/20">
+                                Gemini Powered
+                            </div>
+                        </div>
+                        <div id="ai-output" class="flex-1 bg-slate-900/50 rounded-lg p-4 border border-slate-700 min-h-[100px] text-sm text-slate-300 leading-relaxed overflow-y-auto whitespace-pre-line">
+                            <div class="flex flex-col items-center justify-center h-full text-slate-500 gap-2 mt-4">
+                                <i data-lucide="sparkles" class="w-5 h-5 opacity-50"></i>
+                                <p class="text-center">Ready to analyze.</p>
+                            </div>
+                        </div>
+                        <button onclick="handleAIAnalysis()" id="ai-btn" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium transition-colors flex justify-center items-center gap-2 shadow-lg shadow-indigo-900/20">
+                            <i data-lucide="sparkles" class="w-4 h-4"></i>
+                            <span class="ml-2">Generate Report</span>
+                        </button>
+                    </div>
+
+                    <!-- Renewable & Grid Control -->
+                    <div id="protocols-panel" class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-lg transition-all">
+                        <h2 class="text-lg font-semibold mb-4 text-white flex items-center gap-2">
+                            <i data-lucide="zap" class="w-5 h-5 text-yellow-400"></i>
+                            Energy Controls
+                        </h2>
+                        
+                        <!-- Battery Controls -->
+                        <div class="mb-4">
+                            <label class="text-[10px] uppercase text-slate-500 font-bold mb-2 block">BESS Strategy</label>
+                            <div class="grid grid-cols-3 gap-2">
+                                <button onclick="setBessMode('AUTO')" id="btn-bess-auto" class="px-2 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs border border-slate-700">Auto</button>
+                                <button onclick="setBessMode('SAVE')" id="btn-bess-save" class="px-2 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs border border-slate-700" title="Prioritize Charging">Save</button>
+                                <button onclick="setBessMode('DUMP')" id="btn-bess-dump" class="px-2 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs border border-slate-700">Dump</button>
+                            </div>
+                        </div>
+
+                        <div class="h-px bg-slate-800 my-4"></div>
+
+                        <!-- Grid Protocols -->
+                        <label class="text-[10px] uppercase text-slate-500 font-bold mb-2 block">Grid Response</label>
+                        <div class="grid grid-cols-2 gap-2 mb-2">
+                            <button id="btn-eco" onclick="applyProtocol('ECO')" class="px-3 py-2 bg-emerald-900/20 hover:bg-emerald-900/30 border border-emerald-800/50 text-emerald-400 rounded text-xs font-bold flex items-center justify-center gap-2">
+                                <i data-lucide="leaf" class="w-4 h-4"></i> ECO
+                            </button>
+                            <button id="btn-brownout" onclick="applyProtocol('BROWNOUT')" class="px-3 py-2 bg-orange-900/20 hover:bg-orange-900/30 border border-orange-800/50 text-orange-400 rounded text-xs font-bold flex items-center justify-center gap-2">
+                                <i data-lucide="alert-triangle" class="w-4 h-4"></i> CUT
+                            </button>
+                        </div>
+                        <button id="btn-reset" onclick="applyProtocol('RESET')" class="w-full py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 rounded text-xs font-medium">
+                            Reset All Systems
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Sector List -->
+                <div class="col-span-12">
+                    <h2 class="text-xl font-bold mb-4 text-white flex items-center gap-2">
+                        <i data-lucide="building-2" class="w-6 h-6 text-slate-400"></i>
+                        Sector Management
+                    </h2>
+                    <div id="sector-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <!-- Filled by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- DETAIL VIEW CONTAINER (Hospital & Others) -->
+            <div id="detail-view" class="col-span-12 hidden h-[calc(100vh-140px)] flex-col bg-slate-900 border border-slate-700 rounded-xl overflow-hidden shadow-2xl">
+                 <div class="bg-slate-800 p-4 border-b border-slate-700 flex flex-col md:flex-row md:items-center justify-between gap-4 sticky top-0 z-10 shadow-md">
+                    <div class="flex items-center gap-4">
+                        <button onclick="closeDetailView()" class="p-2 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors group">
+                            <i data-lucide="arrow-left" class="w-5 h-5 text-slate-300 group-hover:text-white"></i>
+                        </button>
+                        <div>
+                            <h2 id="detail-title" class="text-xl font-bold text-white flex items-center gap-2">Sector</h2>
+                            <p id="detail-subtitle" class="text-slate-400 text-xs">Status Monitor</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center gap-4 flex-1 justify-end">
+                        <!-- Search Input (Restored) -->
+                        <div id="detail-search-container" class="hidden md:block relative">
+                            <i data-lucide="search" class="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                            <input id="detail-search" type="text" placeholder="Search..." oninput="renderDetailGrid()"
+                                class="bg-slate-900 border border-slate-700 rounded-lg pl-9 pr-3 py-1.5 text-sm text-slate-200 focus:outline-none focus:border-blue-500 w-48"
+                            />
+                        </div>
+
+                        <!-- Master Controls Container -->
+                        <div id="detail-controls-wrapper" class="flex items-center gap-4">
+                            <!-- Injected dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Generic Grid Content -->
+                <div id="detail-grid" class="flex-1 overflow-y-auto p-4 bg-slate-950/50 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 content-start"></div>
+                
+                <!-- Hospital Specific Content (Hidden by default) -->
+                <div id="hospital-view" class="hidden flex-1 p-6 bg-slate-950/50 flex flex-col gap-6 overflow-y-auto">
+                    <!-- Power Flow Diagram -->
+                    <div class="grid grid-cols-3 gap-4 items-center justify-items-center relative">
+                        <!-- Sources -->
+                        <div class="flex flex-col gap-6 w-full">
+                            <div id="hosp-transformer" class="bg-slate-800 border border-slate-600 p-4 rounded-xl w-full flex justify-between items-center transition-all">
+                                <div>
+                                    <div class="text-xs text-slate-400 uppercase font-bold">Utility Grid</div>
+                                    <div class="text-lg font-bold text-white">Transformer</div>
+                                </div>
+                                <button onclick="toggleHospSource('grid')" class="p-2 bg-slate-700 rounded hover:bg-red-900/50 text-emerald-400" id="btn-hosp-grid">
+                                    <i data-lucide="zap" class="w-5 h-5"></i>
+                                </button>
+                            </div>
+                            <div id="hosp-generator" class="bg-slate-800 border border-slate-600 p-4 rounded-xl w-full flex justify-between items-center transition-all">
+                                <div>
+                                    <div class="text-xs text-slate-400 uppercase font-bold">Backup</div>
+                                    <div class="text-lg font-bold text-white">Generator</div>
+                                </div>
+                                <button onclick="toggleHospSource('gen')" class="p-2 bg-slate-700 rounded hover:bg-emerald-900/50 text-slate-500" id="btn-hosp-gen">
+                                    <i data-lucide="power" class="w-5 h-5"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- ATS & UPS -->
+                        <div class="flex flex-col items-center gap-2 w-full">
+                            <div class="h-full w-1 bg-slate-700 absolute top-0 bottom-0 left-1/3 -ml-2"></div>
+                            
+                            <div class="z-10 bg-slate-900 border border-blue-500 p-4 rounded-full shadow-lg shadow-blue-500/20 mb-8">
+                                <div class="text-center">
+                                    <div class="text-[10px] text-blue-400 font-bold">ATS</div>
+                                    <i data-lucide="arrow-down" class="w-6 h-6 text-white mx-auto animate-bounce"></i>
+                                </div>
+                            </div>
+
+                            <div class="bg-slate-800 border-2 border-yellow-500/50 p-6 rounded-xl w-full text-center relative overflow-hidden">
+                                <div class="relative z-10">
+                                    <div class="text-xs text-yellow-500 uppercase font-bold mb-1">Uninterruptible Power Supply</div>
+                                    <div class="text-3xl font-mono font-bold text-white mb-2" id="hosp-ups-level">100%</div>
+                                    <div class="text-xs text-slate-400" id="hosp-ups-status">Status: Standby</div>
+                                </div>
+                                <div id="hosp-ups-fill" class="absolute bottom-0 left-0 w-full bg-yellow-500/10 transition-all duration-500" style="height: 100%"></div>
+                            </div>
+                        </div>
+
+                        <!-- Load -->
+                        <div class="w-full">
+                            <div class="bg-slate-800 border border-red-500/30 p-6 rounded-xl w-full">
+                                <div class="text-xs text-red-400 uppercase font-bold mb-2">Critical Load</div>
+                                <div class="flex items-center gap-3 mb-4">
+                                    <i data-lucide="stethoscope" class="w-8 h-8 text-red-500"></i>
+                                    <div>
+                                        <div class="text-2xl font-bold text-white" id="hosp-load-val">450 kW</div>
+                                        <div class="text-xs text-slate-400">ICU / OR / Life Support</div>
+                                    </div>
+                                </div>
+                                <div class="h-1 w-full bg-slate-700 rounded-full overflow-hidden">
+                                    <div class="h-full bg-red-500 w-3/4 animate-pulse"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Advisories -->
+                    <div class="bg-slate-900 border border-slate-800 p-4 rounded-lg">
+                        <h3 class="text-sm font-bold text-white mb-3 flex items-center gap-2"><i data-lucide="info" class="w-4 h-4 text-blue-400"></i> Electrical Advisories</h3>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+                            <div class="p-2 bg-slate-800 rounded border border-slate-700">
+                                <div class="text-slate-400 mb-1">Power Factor</div>
+                                <div class="font-mono text-emerald-400">0.98 (Good)</div>
+                            </div>
+                            <div class="p-2 bg-slate-800 rounded border border-slate-700">
+                                <div class="text-slate-400 mb-1">Harmonics (THDv)</div>
+                                <div class="font-mono text-yellow-400">3.2% (Monitor)</div>
+                            </div>
+                            <div class="p-2 bg-slate-800 rounded border border-slate-700">
+                                <div class="text-slate-400 mb-1">Frequency</div>
+                                <div class="font-mono text-white">50.02 Hz</div>
+                            </div>
+                            <div class="p-2 bg-slate-800 rounded border border-slate-700">
+                                <div class="text-slate-400 mb-1">Transformer Temp</div>
+                                <div class="font-mono text-white">65°C (Normal)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // --- Configuration ---
+        const BUILDING_CONFIG = {
+            residence: { id: 'residence', name: 'Residence', count: 147, baseLoad: 5, peakLoad: 10, icon: 'home', color: 'text-blue-400', bgColor: 'bg-blue-400/20', priority: 3, curve: 'residential' },
+            villa: { id: 'villa', name: 'Villa', count: 117, baseLoad: 15, peakLoad: 25, icon: 'home', color: 'text-cyan-400', bgColor: 'bg-cyan-400/20', priority: 3, curve: 'residential' },
+            hospital: { id: 'hospital', name: 'City Hospital', count: 1, baseLoad: 400, peakLoad: 600, icon: 'stethoscope', color: 'text-red-500', bgColor: 'bg-red-500/20', priority: 1, curve: '24/7' },
+            school: { id: 'school', name: 'Central School', count: 1, baseLoad: 20, peakLoad: 120, icon: 'graduation-cap', color: 'text-yellow-400', bgColor: 'bg-yellow-400/20', priority: 2, curve: 'daytime' },
+            mosque: { id: 'mosque', name: 'Grand Mosque', count: 1, baseLoad: 10, peakLoad: 60, icon: 'landmark', color: 'text-emerald-400', bgColor: 'bg-emerald-400/20', priority: 2, curve: 'prayer' },
+            mall: { id: 'mall', name: 'Mega Mall', count: 1, baseLoad: 300, peakLoad: 1200, icon: 'shopping-bag', color: 'text-purple-400', bgColor: 'bg-purple-400/20', priority: 2, curve: 'commercial' },
+            ev: { id: 'ev', name: 'EV Station', count: 5, baseLoad: 50, peakLoad: 150, icon: 'zap', color: 'text-green-400', bgColor: 'bg-green-400/20', priority: 3, curve: 'daytime' },
+        };
+
+        const WEATHER_TYPES = {
+            sunny: { id: 'sunny', label: 'Sunny', efficiency: 1.0, icon: 'sun', color: 'text-yellow-400' },
+            cloudy: { id: 'cloudy', label: 'Cloudy', efficiency: 0.6, icon: 'cloud', color: 'text-slate-400' },
+            rainy: { id: 'rainy', label: 'Rainy', efficiency: 0.25, icon: 'cloud-rain', color: 'text-blue-400' },
+            stormy: { id: 'stormy', label: 'Stormy', efficiency: 0.1, icon: 'cloud-lightning', color: 'text-purple-400' }
+        };
+
+        const MAX_GRID_CAPACITY = 8000;
+        const SOLAR_INSTALLED_CAPACITY = 3500;
+        const WIND_INSTALLED_CAPACITY = 2500; // 2.5MW Wind Farm
+        const BESS_CAPACITY = 5000; // 5MWh Battery
+
+        // --- Auth & State ---
+        let state = {
+            currentUser: null, 
+            users: [{ username: 'Mina Hanna', password: 'Mina-ET5-2025', role: 'admin', name: 'Mina Hanna' }],
+            time: 720,
+            isPlaying: true,
+            speed: 1,
+            buildings: [],
+            renewables: [], // Array for solar/wind units
+            history: new Array(50).fill({ consumption: 0, solar: 0, wind: 0 }),
+            weather: 'sunny',
+            selectedSectorId: null,
+            
+            // Advanced Electrical State
+            bess: { current: 2500, mode: 'AUTO' }, 
+            hospital: { 
+                gridActive: true, 
+                genActive: false, 
+                upsLevel: 100,
+                upsState: 'STANDBY' 
+            },
+            windFlux: 0.5 
+        };
+
+        let lastTimestamp = 0;
+        let lastTimeIcon = 'sun'; 
+
+        // --- Helper for Safe DOM Updates ---
+        function safeSetText(id, text) {
+            const el = document.getElementById(id);
+            if (el) el.innerText = text;
+        }
+        
+        // Log to System
+        function logSystemEvent(msg) {
+            const container = document.getElementById('system-logs');
+            const entry = document.createElement('div');
+            const timeStr = `${String(Math.floor(state.time/60)).padStart(2,'0')}:${String(Math.floor(state.time%60)).padStart(2,'0')}`;
+            entry.className = "flex gap-2 animate-in slide-in-from-left-2 fade-in duration-300";
+            entry.innerHTML = `<span class="text-slate-600">[${timeStr}]</span> <span>${msg}</span>`;
+            if (container) {
+                container.prepend(entry);
+                if (container.children.length > 20) container.lastElementChild.remove();
+            }
+        }
+
+        // --- Persistence Helpers ---
+        function saveSystemData() {
+            localStorage.setItem('smart_city_users', JSON.stringify(state.users));
+        }
+
+        function loadSystemData() {
+            const storedUsers = localStorage.getItem('smart_city_users');
+            if (storedUsers) {
+                state.users = JSON.parse(storedUsers);
+            }
+            // Ensure default admin always exists just in case
+            if (!state.users.find(u => u.username === 'Mina Hanna')) {
+                state.users.push({ username: 'Mina Hanna', password: 'Mina-ET5-2025', role: 'admin', name: 'Mina Hanna' });
+            }
+        }
+
+        function checkSession() {
+            const session = localStorage.getItem('smart_city_session');
+            if (session) {
+                const user = JSON.parse(session);
+                // Verify user still exists
+                const valid = state.users.find(u => u.username === user.username && u.password === user.password);
+                if (valid) login(valid);
+            }
+        }
+
+        // --- Initialization ---
+        function init() {
+            loadSystemData(); // Load users first
+
+            let idCounter = 1;
+            
+            // Generate Buildings
+            Object.values(BUILDING_CONFIG).forEach(type => {
+                for (let i = 0; i < type.count; i++) {
+                    state.buildings.push({
+                        id: `b-${idCounter++}`,
+                        typeId: type.id,
+                        name: type.count === 1 ? type.name : `${type.name} #${i+1}`,
+                        throttle: 1.0,
+                        currentLoad: 0,
+                        variance: Math.random() * 0.2 - 0.1
+                    });
+                }
+            });
+
+            // Generate Renewable Units (Mock Data for Detail View)
+            for(let i=0; i<10; i++) state.renewables.push({ id: `pv-${i}`, type: 'Solar Array', name: `PV String ${i+1}`, output: 0, status: 'Active' });
+            for(let i=0; i<5; i++) state.renewables.push({ id: `wt-${i}`, type: 'Wind Turbine', name: `Turbine ${i+1}`, output: 0, status: 'Active' });
+
+            // Populate Unit Select for Admin
+            const select = document.getElementById('new-unit');
+            const units = state.buildings.slice(0, 50); 
+            if(select) {
+                units.forEach(u => {
+                    const opt = document.createElement('option');
+                    opt.value = u.id;
+                    opt.innerText = u.name;
+                    select.appendChild(opt);
+                });
+            }
+
+            refreshIcons();
+            
+            checkSession(); // Restore session if available
+
+            requestAnimationFrame(loop);
+        }
+
+        // --- Auth Logic ---
+        function attemptLogin() {
+            const user = document.getElementById('login-user').value;
+            const pass = document.getElementById('login-pass').value;
+            const found = state.users.find(u => u.username === user && u.password === pass);
+            if (found) login(found);
+            else alert("Invalid Credentials");
+        }
+
+        function loginAsGuest() { login({ role: 'guest', name: 'Guest User' }); }
+
+        function login(user) {
+            state.currentUser = user;
+            localStorage.setItem('smart_city_session', JSON.stringify(user));
+
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('app').classList.remove('hidden');
+            document.getElementById('user-display-name').innerText = user.name;
+            document.getElementById('user-role-badge').innerText = user.role.toUpperCase();
+            
+            if (user.role === 'admin') {
+                document.getElementById('admin-panel-btn').classList.remove('hidden');
+            } else {
+                document.getElementById('protocols-panel').classList.add('opacity-50', 'pointer-events-none');
+            }
+            renderWeatherControls();
+            renderSectorGrid(); 
+            refreshIcons();
+            logSystemEvent(`User ${user.username} logged in as ${user.role}`);
+        }
+
+        function logout() { 
+            localStorage.removeItem('smart_city_session');
+            location.reload(); 
+        }
+
+        // --- Admin Panel Logic ---
+        function openAdminPanel() {
+            renderUserList();
+            document.getElementById('admin-panel').classList.remove('hidden');
+        }
+
+        function closeAdminPanel() {
+            document.getElementById('admin-panel').classList.add('hidden');
+        }
+
+        function renderUserList() {
+            const tbody = document.getElementById('user-list-body');
+            tbody.innerHTML = state.users.map(u => `
+                <tr>
+                    <td class="p-3 text-white font-medium">${u.username}</td>
+                    <td class="p-3"><span class="bg-slate-800 text-slate-300 px-2 py-0.5 rounded text-[10px] uppercase">${u.role}</span></td>
+                    <td class="p-3 text-slate-400">${u.assignedUnitId || '-'}</td>
+                    <td class="p-3 text-right">
+                        ${u.role !== 'admin' ? `<button onclick="removeMember('${u.username}')" class="text-red-400 hover:text-red-300 text-xs underline">Remove</button>` : ''}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function addMember() {
+            const u = document.getElementById('new-username').value;
+            const p = document.getElementById('new-password').value;
+            const unit = document.getElementById('new-unit').value;
+            if(u && p && unit) {
+                state.users.push({ username: u, password: p, role: 'member', name: `Member ${u}`, assignedUnitId: unit });
+                saveSystemData(); // Save to local storage
+                document.getElementById('new-username').value = '';
+                document.getElementById('new-password').value = '';
+                renderUserList();
+                logSystemEvent(`Admin created user: ${u}`);
+            } else {
+                alert("Please fill all fields");
+            }
+        }
+
+        function removeMember(username) {
+            state.users = state.users.filter(u => u.username !== username);
+            saveSystemData(); // Save to local storage
+            renderUserList();
+            logSystemEvent(`Admin removed user: ${username}`);
+        }
+
+        // --- Simulation Core ---
+        function getLoadMultiplier(hour, curveType) {
+            const h = hour % 24;
+            switch (curveType) {
+                case 'residential': return (h >= 0 && h < 6) ? 0.2 : (h >= 6 && h < 9) ? 0.8 : (h >= 9 && h < 17) ? 0.4 : (h >= 17 && h < 23) ? 1.0 : 0.5;
+                case 'commercial': return (h >= 10 && h < 22) ? 1.0 : 0.15;
+                case 'daytime': return (h >= 7 && h < 16) ? 1.0 : 0.1;
+                case 'prayer': return [4,5,12,13,15,16,18,19,20].includes(Math.floor(h)) ? 1.0 : 0.2;
+                case '24/7': return (h >= 8 && h < 22) ? 1.0 : 0.8;
+                default: return 0.5;
+            }
+        }
+
+        function calculatePhysics() {
+            const hour = state.time / 60;
+            let totalConsumption = 0;
+            let hospLoad = 0;
+            
+            // 1. Demands
+            state.buildings.forEach(b => {
+                const config = BUILDING_CONFIG[b.typeId];
+                const multiplier = getLoadMultiplier(hour, config.curve);
+                let load = config.baseLoad + ((config.peakLoad - config.baseLoad) * multiplier);
+                load = load * (1 + b.variance) * b.throttle;
+                b.currentLoad = Math.max(0, load);
+                totalConsumption += b.currentLoad;
+                
+                if (b.typeId === 'hospital') hospLoad = b.currentLoad;
+            });
+
+            // 2. Solar
+            let solarOutput = 0;
+            if (state.time > 360 && state.time < 1080) { 
+                const sunAngle = Math.sin(((state.time - 360) / 720) * Math.PI);
+                solarOutput = sunAngle * SOLAR_INSTALLED_CAPACITY * WEATHER_TYPES[state.weather].efficiency;
+            }
+
+            // 3. Wind
+            state.windFlux += (Math.random() - 0.5) * 0.1;
+            state.windFlux = Math.max(0, Math.min(1, state.windFlux));
+            let windEfficiency = 1.0;
+            if(state.weather === 'stormy') windEfficiency = 1.5; 
+            else if (state.weather === 'sunny') windEfficiency = 0.6;
+            const windOutput = WIND_INSTALLED_CAPACITY * state.windFlux * windEfficiency;
+            const totalRenewable = solarOutput + windOutput;
+
+            // Update individual renewable units for detail view
+            state.renewables.forEach(r => {
+                if (r.type === 'Solar Array') r.output = (solarOutput / 10) * (0.9 + Math.random()*0.2);
+                else r.output = (windOutput / 5) * (0.8 + Math.random()*0.4);
+            });
+
+            // 4. Battery
+            let netGridLoad = 0;
+            if (state.bess.mode === 'SAVE') {
+                const absorbed = Math.min(totalRenewable, (BESS_CAPACITY - state.bess.current));
+                state.bess.current += absorbed * 0.05; 
+                const renewableForCity = Math.max(0, totalRenewable - absorbed);
+                netGridLoad = totalConsumption - renewableForCity;
+            } else if (state.bess.mode === 'AUTO') {
+                const netBeforeBess = totalConsumption - totalRenewable;
+                if (netBeforeBess < 0 && state.bess.current < BESS_CAPACITY) {
+                    state.bess.current += Math.abs(netBeforeBess) * 0.1; 
+                    netGridLoad = 0; 
+                } else if (netBeforeBess > 0 && state.bess.current > 0) {
+                    const discharge = Math.min(state.bess.current, netBeforeBess * 0.1);
+                    state.bess.current -= discharge; 
+                    netGridLoad = netBeforeBess - (discharge * 10);
+                } else {
+                    netGridLoad = netBeforeBess;
+                }
+            } else { // DUMP
+                if (state.bess.current > 0) state.bess.current -= 50;
+                netGridLoad = totalConsumption - totalRenewable - 500;
+            }
+            state.bess.current = Math.max(0, Math.min(BESS_CAPACITY, state.bess.current));
+
+            // 5. Hospital
+            let activeSource = 'NONE';
+            if (state.hospital.gridActive) activeSource = 'GRID';
+            else if (state.hospital.genActive) activeSource = 'GEN';
+            else activeSource = 'UPS';
+
+            if (activeSource === 'UPS') {
+                state.hospital.upsState = 'DISCHARGING';
+                state.hospital.upsLevel -= 0.5; 
+            } else {
+                if (state.hospital.upsLevel < 100) {
+                    state.hospital.upsState = 'CHARGING';
+                    state.hospital.upsLevel += 0.2; 
+                } else {
+                    state.hospital.upsState = 'STANDBY';
+                }
+            }
+            state.hospital.upsLevel = Math.max(0, Math.min(100, state.hospital.upsLevel));
+
+            return { 
+                consumption: totalConsumption, 
+                solar: solarOutput, 
+                wind: windOutput,
+                net: netGridLoad,
+                bess: state.bess.current
+            };
+        }
+
+        function loop(timestamp) {
+            if (!lastTimestamp) lastTimestamp = timestamp;
+            const deltaTime = timestamp - lastTimestamp;
+
+            if (deltaTime > (1000 / (state.speed * 10)) && state.isPlaying) {
+                state.time = (state.time + 1) >= 1440 ? 0 : state.time + 1;
+                const stats = calculatePhysics();
+                state.history.push({ consumption: stats.consumption, solar: stats.solar + stats.wind }); // Grouped for chart
+                if (state.history.length > 50) state.history.shift();
+                updateUI(stats);
+                lastTimestamp = timestamp;
+            }
+            requestAnimationFrame(loop);
+        }
+
+        // --- UI Updates ---
+        function updateUI(stats) {
+            // Clock
+            const h = Math.floor(state.time / 60);
+            const m = Math.floor(state.time % 60);
+            safeSetText('time-display', `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}`);
+            
+            // Icon
+            const isNight = h < 6 || h >= 18;
+            if (lastTimeIcon !== (isNight ? 'moon' : 'sun')) {
+                const wrapper = document.getElementById('time-icon-wrapper');
+                if (wrapper) {
+                    wrapper.innerHTML = `<i data-lucide="${isNight ? 'moon' : 'sun'}" class="w-4 h-4 ${isNight ? 'text-blue-300' : 'text-yellow-400'}"></i>`;
+                    refreshIcons();
+                }
+                lastTimeIcon = isNight ? 'moon' : 'sun';
+            }
+
+            // Stats
+            const netLoadEl = document.getElementById('stat-net-load');
+            if(netLoadEl) {
+                netLoadEl.innerText = Math.round(stats.net).toLocaleString();
+                netLoadEl.className = `text-2xl font-bold ${stats.net < 0 ? 'text-emerald-400' : stats.net > MAX_GRID_CAPACITY * 0.9 ? 'text-red-500' : 'text-emerald-500'}`;
+            }
+            
+            safeSetText('stat-net-sub', stats.net < 0 ? 'Exporting to Grid' : `${Math.round((stats.net / MAX_GRID_CAPACITY)*100)}% of Capacity`);
+            safeSetText('stat-renewable', Math.round(stats.solar + stats.wind).toLocaleString());
+            safeSetText('val-solar', Math.round(stats.solar) + 'kW');
+            safeSetText('val-wind', Math.round(stats.wind) + 'kW');
+            safeSetText('stat-consumption', Math.round(stats.consumption).toLocaleString());
+            safeSetText('stat-cost', `$${Math.round(Math.max(0, stats.net) * 0.12).toLocaleString()}`);
+            
+            // BESS UI
+            safeSetText('stat-bess', Math.round(state.bess.current).toLocaleString());
+            safeSetText('stat-bess-status', state.bess.mode === 'SAVE' ? 'CHARGING PRIORITY' : state.bess.current < 100 ? 'EMPTY' : 'ACTIVE');
+            const bessFill = document.getElementById('bess-fill');
+            if(bessFill) bessFill.style.height = `${(state.bess.current / BESS_CAPACITY) * 100}%`;
+
+            // Carbon Footprint Logic
+            const co2 = Math.max(0, stats.net) * 0.5;
+            safeSetText('stat-co2', Math.round(co2));
+            safeSetText('stat-co2-sub', co2 > 2000 ? 'Intensity: High' : 'Intensity: Low (Green)');
+
+            renderChart();
+            updateSectorVisuals();
+
+            // Hospital & Renewables Updates
+            if (state.selectedSectorId === 'hospital') {
+                updateHospitalUI();
+            } else if (state.selectedSectorId === 'renewables') {
+                // Update renewable detail grid
+                state.renewables.forEach(r => {
+                    safeSetText(`node-load-${r.id}`, `${Math.round(r.output)}kW`);
+                });
+            } else if (state.selectedSectorId) {
+                const group = state.buildings.filter(b => b.typeId === state.selectedSectorId);
+                group.forEach(b => {
+                    safeSetText(`node-load-${b.id}`, `${Math.round(b.currentLoad)}kW`);
+                });
+            }
+        }
+
+        function updateHospitalUI() {
+            // Source Buttons
+            const btnGrid = document.getElementById('btn-hosp-grid');
+            const btnGen = document.getElementById('btn-hosp-gen');
+            const transCard = document.getElementById('hosp-transformer');
+            const genCard = document.getElementById('hosp-generator');
+
+            if (btnGrid && transCard) {
+                if (state.hospital.gridActive) {
+                    btnGrid.className = "p-2 bg-slate-700 rounded hover:bg-red-900/50 text-emerald-400";
+                    transCard.className = "bg-slate-800 border border-emerald-500/50 p-4 rounded-xl w-full flex justify-between items-center transition-all shadow-[0_0_15px_rgba(16,185,129,0.1)]";
+                } else {
+                    btnGrid.className = "p-2 bg-slate-700 rounded hover:bg-emerald-900/50 text-red-500";
+                    transCard.className = "bg-slate-900 border border-slate-700 p-4 rounded-xl w-full flex justify-between items-center opacity-60";
+                }
+            }
+
+            if (btnGen && genCard) {
+                if (state.hospital.genActive) {
+                    btnGen.className = "p-2 bg-emerald-600 rounded hover:bg-red-600 text-white animate-pulse";
+                    genCard.className = "bg-slate-800 border border-emerald-500/50 p-4 rounded-xl w-full flex justify-between items-center transition-all shadow-[0_0_15px_rgba(16,185,129,0.1)]";
+                } else {
+                    btnGen.className = "p-2 bg-slate-700 rounded hover:bg-emerald-900/50 text-slate-500";
+                    genCard.className = "bg-slate-900 border border-slate-700 p-4 rounded-xl w-full flex justify-between items-center opacity-60";
+                }
+            }
+
+            const upsEl = document.getElementById('hosp-ups-level');
+            const statusEl = document.getElementById('hosp-ups-status');
+            const fillEl = document.getElementById('hosp-ups-fill');
+            
+            if (upsEl) upsEl.innerText = `${Math.round(state.hospital.upsLevel)}%`;
+            if (fillEl) fillEl.style.height = `${state.hospital.upsLevel}%`;
+            
+            if (statusEl && upsEl) {
+                if (state.hospital.upsState === 'DISCHARGING') {
+                    statusEl.innerText = "CRITICAL: ON BATTERY";
+                    statusEl.className = "text-xs text-red-500 font-bold animate-pulse";
+                    upsEl.className = "text-3xl font-mono font-bold text-red-500 mb-2";
+                } else if (state.hospital.upsState === 'CHARGING') {
+                    statusEl.innerText = "Charging...";
+                    statusEl.className = "text-xs text-emerald-400";
+                    upsEl.className = "text-3xl font-mono font-bold text-emerald-400 mb-2";
+                } else {
+                    statusEl.innerText = "Status: Standby";
+                    statusEl.className = "text-xs text-slate-400";
+                    upsEl.className = "text-3xl font-mono font-bold text-white mb-2";
+                }
+            }
+
+            const hosp = state.buildings.find(b => b.typeId === 'hospital');
+            if(hosp) safeSetText('hosp-load-val', `${Math.round(hosp.currentLoad)} kW`);
+        }
+
+        // --- Controls ---
+        function setBessMode(mode) {
+            state.bess.mode = mode;
+            logSystemEvent(`BESS mode changed to ${mode}`);
+            ['AUTO', 'SAVE', 'DUMP'].forEach(m => {
+                const btn = document.getElementById(`btn-bess-${m.toLowerCase()}`);
+                if (m === mode) btn.className = "px-2 py-1.5 bg-cyan-600 text-white rounded text-xs border border-cyan-500";
+                else btn.className = "px-2 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs border border-slate-700";
+            });
+        }
+
+        function toggleHospSource(source) {
+            if (source === 'grid') {
+                state.hospital.gridActive = !state.hospital.gridActive;
+                showAlert(state.hospital.gridActive ? "Grid Restored" : "Grid Failure Simulated", 'hospital');
+                logSystemEvent(state.hospital.gridActive ? "Hospital: Utility Grid Online" : "Hospital: Utility Grid Lost");
+            } else if (source === 'gen') {
+                state.hospital.genActive = !state.hospital.genActive;
+                showAlert(state.hospital.genActive ? "Generator Started" : "Generator Stopped", 'hospital');
+                logSystemEvent(state.hospital.genActive ? "Hospital: Diesel Gen Started" : "Hospital: Diesel Gen Stopped");
+            }
+        }
+
+        function openDetailView(sectorId) {
+            state.selectedSectorId = sectorId;
+            document.getElementById('dashboard-view').classList.remove('contents');
+            document.getElementById('dashboard-view').classList.add('hidden');
+            document.getElementById('detail-view').classList.remove('hidden');
+            document.getElementById('detail-view').classList.add('flex');
+            
+            const searchContainer = document.getElementById('detail-search-container');
+            const titleEl = document.getElementById('detail-title');
+            
+            // 1. HOSPITAL View
+            if (sectorId === 'hospital') {
+                const config = BUILDING_CONFIG[sectorId];
+                titleEl.innerHTML = `<i data-lucide="${config.icon}" class="w-5 h-5 ${config.color}"></i> ${config.name}`;
+                document.getElementById('detail-grid').classList.add('hidden');
+                document.getElementById('hospital-view').classList.remove('hidden');
+                document.getElementById('detail-controls-wrapper').innerHTML = ''; 
+                if(searchContainer) searchContainer.classList.add('hidden');
+            
+            // 2. RENEWABLES View
+            } else if (sectorId === 'renewables') {
+                titleEl.innerHTML = `<i data-lucide="leaf" class="w-5 h-5 text-emerald-400"></i> Generation Assets`;
+                document.getElementById('hospital-view').classList.add('hidden');
+                document.getElementById('detail-grid').classList.remove('hidden');
+                if(searchContainer) searchContainer.classList.add('hidden');
+                document.getElementById('detail-controls-wrapper').innerHTML = ''; // No master control for sun/wind
+                renderRenewablesGrid();
+
+            // 3. STANDARD Sector View
+            } else {
+                const config = BUILDING_CONFIG[sectorId];
+                titleEl.innerHTML = `<i data-lucide="${config.icon}" class="w-5 h-5 ${config.color}"></i> ${config.name}`;
+                document.getElementById('hospital-view').classList.add('hidden');
+                document.getElementById('detail-grid').classList.remove('hidden');
+                if(searchContainer) searchContainer.classList.remove('hidden');
+                renderDetailGrid(); 
+                
+                // Inject Standard Controls
+                const canControl = state.currentUser?.role === 'admin';
+                if(canControl) {
+                    const group = state.buildings.filter(b => b.typeId === sectorId);
+                    const avg = group.reduce((a,b)=>a+b.throttle,0)/group.length;
+                    document.getElementById('detail-controls-wrapper').innerHTML = `
+                        <div class="bg-slate-900/50 p-2 rounded-lg border border-slate-700 flex flex-col w-48">
+                            <div class="flex justify-between items-center text-[10px] font-semibold text-slate-400 mb-1 uppercase">
+                                <span>Master Override</span>
+                                <span id="detail-master-val">${Math.round(avg*100)}%</span>
+                            </div>
+                            <input id="detail-master-slider" type="range" min="0" max="1" step="0.05" value="${avg}" 
+                                class="w-full h-1.5 rounded-lg appearance-none cursor-pointer"
+                                oninput="updateSectorThrottle('${sectorId}', this.value); document.getElementById('detail-master-val').innerText = Math.round(this.value*100)+'%'"
+                            />
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('detail-controls-wrapper').innerHTML = `<span class="text-xs text-slate-500 italic">View Only Mode</span>`;
+                }
+            }
+            refreshIcons();
+        }
+
+        // --- Boilerplate ---
+        function updateSectorVisuals() {
+            Object.values(BUILDING_CONFIG).forEach(config => {
+                const group = state.buildings.filter(b => b.typeId === config.id);
+                const groupLoad = group.reduce((a,b) => a + b.currentLoad, 0);
+                safeSetText(`load-val-${config.id}`, Math.round(groupLoad).toLocaleString());
+
+                if (config.count > 10) {
+                    const dotsContainer = document.getElementById(`dots-${config.id}`);
+                    if (dotsContainer) {
+                        const activeColorClass = config.color.replace('text-', 'bg-');
+                        const html = group.map(b => {
+                            let bgClass = 'bg-slate-700'; 
+                            if (b.throttle > 0.05) {
+                                if (b.currentLoad > config.peakLoad * 0.9) bgClass = 'bg-red-500';
+                                else bgClass = activeColorClass;
+                            }
+                            const opacity = b.throttle > 0 ? 0.4 + (b.throttle * 0.6) : 0.2;
+                            return `<div class="w-1.5 h-1.5 rounded-full ${bgClass} transition-colors duration-300" style="opacity: ${opacity}"></div>`;
+                        }).join('');
+                        dotsContainer.innerHTML = html;
+                    }
+                }
+            });
+        }
+        
+        function renderChart() {
+            const svg = document.getElementById('grid-chart');
+            if (!svg) return;
+            const width = 1000, height = 300, padding = 20, maxLoad = 9000; 
+            const getX = (i) => (i / (state.history.length - 1)) * (width - padding * 2) + padding;
+            const getY = (val) => height - padding - ((val / maxLoad) * (height - padding * 2));
+            let conPath = "", solarPath = "";
+            state.history.forEach((d, i) => {
+                const x = getX(i);
+                conPath += `${x},${getY(d.consumption)} `;
+                solarPath += `${x},${getY(d.solar)} `;
+            });
+            const capacityY = getY(MAX_GRID_CAPACITY);
+            svg.innerHTML = `
+                <line x1="${padding}" y1="${capacityY}" x2="${width-padding}" y2="${capacityY}" stroke="#ef4444" stroke-width="2" stroke-dasharray="5,5" opacity="0.5" />
+                <text x="${padding}" y="${capacityY-10}" fill="#ef4444" font-size="12" opacity="0.7">Grid Limit</text>
+                <polygon points="${solarPath} ${width-padding},${height-padding} ${padding},${height-padding}" fill="rgba(16, 185, 129, 0.2)" />
+                <polyline points="${solarPath}" fill="none" stroke="#10b981" stroke-width="2" />
+                <polyline points="${conPath}" fill="none" stroke="#3b82f6" stroke-width="3" />
+            `;
+        }
+        function renderWeatherControls() {
+            const container = document.getElementById('weather-controls');
+            if (!container) return;
+            const canControl = state.currentUser?.role === 'admin';
+            container.innerHTML = Object.values(WEATHER_TYPES).map(w => `
+                <button onclick="${canControl ? `setWeather('${w.id}')` : ''}" class="p-2 rounded-md transition-all ${state.weather === w.id ? 'bg-slate-700 shadow-sm' : 'hover:bg-slate-700/50'} ${canControl ? '' : 'cursor-default opacity-80'}"><i data-lucide="${w.icon}" class="w-4 h-4 ${state.weather === w.id ? w.color : 'text-slate-500'}"></i></button>
+            `).join('');
+        }
+        function renderSectorGrid() {
+            const container = document.getElementById('sector-grid');
+            if (!container) return;
+            const canControlGlobal = state.currentUser?.role === 'admin';
+            const html = Object.values(BUILDING_CONFIG).map(config => {
+                const group = state.buildings.filter(b => b.typeId === config.id);
+                const avgThrottle = group.reduce((a,b) => a+b.throttle, 0) / group.length;
+                const canExpand = true; // All expandable now
+                const dotsContainer = config.count > 10 ? `<div id="dots-${config.id}" class="flex flex-wrap gap-0.5 h-16 overflow-hidden content-start"></div>` : `<div class="p-4 flex-1 flex items-center justify-center text-slate-600 text-xs">Single Unit Monitor</div>`;
+                let controlsHtml = canControlGlobal ? `
+                    <div class="p-3 bg-slate-900/50 border-t border-slate-700">
+                        <div class="flex justify-between items-center mb-1"><span class="text-[10px] text-slate-400 font-bold">SUPPLY</span><span id="slider-val-${config.id}" class="text-xs font-mono font-bold text-emerald-400">${Math.round(avgThrottle * 100)}%</span></div>
+                        <input id="slider-input-${config.id}" type="range" min="0" max="1" step="0.05" value="${avgThrottle}" oninput="updateSectorThrottle('${config.id}', this.value)" class="w-full h-1.5 rounded-lg appearance-none cursor-pointer" />
+                    </div>` : `<div class="p-3 bg-slate-900/50 border-t border-slate-700 flex justify-between items-center"><span class="text-[10px] text-slate-500 font-bold">STATUS: MONITORING</span><i data-lucide="lock" class="w-3 h-3 text-slate-600"></i></div>`;
+                const powerBtn = canControlGlobal ? `<button onclick="toggleSectorPower('${config.id}', event)" class="p-1.5 rounded-md hover:bg-slate-700 text-slate-400 hover:text-white transition-colors"><i data-lucide="power" class="w-4 h-4"></i></button>` : '';
+                return `<div class="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden shadow-lg flex flex-col"><div class="p-4 flex items-center justify-between border-b border-slate-700 bg-slate-800/50"><div class="flex items-center gap-3 cursor-pointer group" onclick="openDetailView('${config.id}')"><div class="p-2 rounded-lg ${config.bgColor}"><i data-lucide="${config.icon}" class="w-5 h-5 ${config.color}"></i></div><div><h3 class="text-white font-medium group-hover:text-blue-400 transition-colors">${config.name}s</h3><p class="text-xs text-slate-400">Priority: ${config.priority}</p></div></div><div class="flex flex-col items-end gap-1"><div class="flex items-center gap-2">${powerBtn}<div class="text-lg font-bold text-white"><span id="load-val-${config.id}">0</span> <span class="text-xs text-slate-500 font-normal">kW</span></div></div></div></div><div onclick="openDetailView('${config.id}')" class="p-4 flex-1 cursor-pointer hover:bg-slate-900/30 transition-colors">${dotsContainer}</div>${controlsHtml}</div>`;
+            }).join('');
+            container.innerHTML = html;
+        }
+        function renderDetailGrid() { 
+            const container = document.getElementById('detail-grid');
+            const searchInput = document.getElementById('detail-search');
+            const search = searchInput ? searchInput.value.toLowerCase() : "";
+            
+            const config = BUILDING_CONFIG[state.selectedSectorId];
+            const filtered = state.buildings.filter(b => b.typeId === state.selectedSectorId && b.name.toLowerCase().includes(search));
+            const html = filtered.map(b => {
+                const isAdmin = state.currentUser?.role === 'admin';
+                const canControl = isAdmin;
+                return `<div class="bg-slate-900 border ${b.throttle > 0.9 ? 'border-slate-800' : 'border-yellow-900/50'} rounded-lg p-3 flex flex-col gap-2 transition-all hover:border-slate-600 ${canControl ? '' : 'opacity-75'}"><div class="flex justify-between items-start"><div class="flex items-center gap-2"><div class="p-1.5 rounded ${config.bgColor}"><i data-lucide="${config.icon}" class="w-3 h-3 ${config.color}"></i></div><span class="text-xs font-medium text-slate-300 truncate w-20" title="${b.name}">${b.name}</span></div><div id="node-load-${b.id}" class="text-xs font-mono font-bold text-white">0kW</div></div><div class="space-y-1"><input type="range" min="0" max="1" step="0.1" value="${b.throttle}" oninput="updateIndividualThrottle('${b.id}', this.value)" ${canControl ? '' : 'disabled'} class="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer ${canControl ? 'accent-blue-500' : 'accent-slate-600'}" /></div></div>`;
+            }).join('');
+            container.innerHTML = html.length ? html : '<div class="col-span-full text-center text-slate-500 py-10">No units found</div>';
+            refreshIcons();
+        }
+        function renderRenewablesGrid() {
+            const container = document.getElementById('detail-grid');
+            const html = state.renewables.map(r => {
+                const isSolar = r.type === 'Solar Array';
+                const icon = isSolar ? 'sun' : 'wind';
+                const color = isSolar ? 'text-yellow-400' : 'text-blue-400';
+                const bg = isSolar ? 'bg-yellow-400/20' : 'bg-blue-400/20';
+                
+                return `<div class="bg-slate-900 border border-slate-800 rounded-lg p-3 flex flex-col gap-2"><div class="flex justify-between items-start"><div class="flex items-center gap-2"><div class="p-1.5 rounded ${bg}"><i data-lucide="${icon}" class="w-3 h-3 ${color}"></i></div><span class="text-xs font-medium text-slate-300">${r.name}</span></div><div id="node-load-${r.id}" class="text-xs font-mono font-bold text-emerald-400">0kW</div></div><div class="text-[10px] text-slate-500 mt-2">Efficiency: <span class="text-slate-300">98%</span></div></div>`;
+            }).join('');
+            container.innerHTML = html;
+            refreshIcons();
+        }
+        function setWeather(type) { state.weather = type; renderWeatherControls(); refreshIcons(); logSystemEvent(`Weather changed to ${type}`); }
+        function updateSectorThrottle(typeId, val) { 
+            state.buildings.forEach(b => { if (b.typeId === typeId) b.throttle = parseFloat(val); }); 
+            const sl = document.getElementById(`slider-val-${typeId}`); if(sl) sl.innerText = `${Math.round(val*100)}%`;
+        }
+        function toggleSectorPower(typeId, e) { e.stopPropagation(); const first = state.buildings.find(b => b.typeId === typeId); updateSectorThrottle(typeId, first.throttle > 0.5 ? 0 : 1); }
+        function updateIndividualThrottle(id, val) { const b = state.buildings.find(b => b.id === id); if(b) b.throttle = parseFloat(val); }
+        function closeDetailView() { state.selectedSectorId = null; document.getElementById('detail-view').classList.add('hidden'); document.getElementById('detail-view').classList.remove('flex'); document.getElementById('dashboard-view').classList.remove('hidden'); document.getElementById('dashboard-view').classList.add('contents'); }
+        function showAlert(msg, sectorId) {
+            const el = document.getElementById('alert-banner');
+            const msgEl = document.getElementById('alert-message');
+            const config = BUILDING_CONFIG[sectorId];
+            el.className = `absolute left-1/2 -translate-x-1/2 px-6 py-2.5 rounded-full border text-sm font-bold shadow-2xl flex items-center gap-2 z-50 transition-all duration-300 animate-bounce ${msg.includes('Cut') || msg.includes('Failure') ? 'bg-orange-950 border-orange-500 text-orange-400' : 'bg-emerald-950 border-emerald-500 text-emerald-400'}`;
+            msgEl.innerText = `${config.name}: ${msg}`;
+            el.classList.remove('hidden'); setTimeout(() => el.classList.add('hidden'), 2000);
+        }
+        function applyProtocol(type) { if (state.currentUser?.role !== 'admin') return; logSystemEvent(`Protocol Initiated: ${type}`); state.buildings.forEach(b => { const p = BUILDING_CONFIG[b.typeId].priority; if(type === 'ECO' && p>=2) b.throttle = 0.8; if(type === 'BROWNOUT' && p>=2) b.throttle = 0.4; if(type === 'RESET') b.throttle = 1.0; }); renderSectorGrid(); refreshIcons(); }
+        async function handleAIAnalysis() { /* Same as before but with updated stats context */ 
+            const btn = document.getElementById('ai-btn'); btn.disabled = true; btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Analyzing...`; refreshIcons();
+            const apiKey = ""; const stats = calculatePhysics();
+            const context = `Time: ${Math.floor(state.time/60)}:${Math.floor(state.time%60)}, BESS: ${Math.round(state.bess.current)}kWh (${state.bess.mode}), HospGrid: ${state.hospital.gridActive}, HospUPS: ${state.hospital.upsLevel}%`;
+            const prompt = `Smart City Grid AI. Analyze: ${context}. 3 short bullet points.`;
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
+                const data = await response.json();
+                document.getElementById('ai-output').innerHTML = `<div class="p-2 animate-in fade-in">${data.candidates?.[0]?.content?.parts?.[0]?.text || "AI Busy."}</div>`;
+                logSystemEvent("AI Report Generated");
+            } catch (e) { document.getElementById('ai-output').innerText = "Connection Error"; }
+            btn.disabled = false; btn.innerHTML = `<i data-lucide="sparkles" class="w-4 h-4"></i> Generate Status Report ✨`; refreshIcons();
+        }
+        function togglePlay() { state.isPlaying = !state.isPlaying; document.getElementById('play-icon-wrapper').innerHTML = `<i data-lucide="${state.isPlaying ? 'pause' : 'play'}" class="w-4 h-4"></i>`; refreshIcons(); }
+        function toggleSpeed() { state.speed = state.speed === 1 ? 20 : 1; document.getElementById('speed-btn').className = `p-2 rounded transition-colors ${state.speed > 1 ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-700'}`; }
+        function resetSimulation() { state.time = 720; state.buildings = []; init(); logSystemEvent("Simulation Reset"); }
+        function refreshIcons() { if (typeof lucide !== 'undefined') lucide.createIcons(); }
+
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
