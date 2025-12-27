@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart City BMS v3.3 - Admin & Renewables</title>
+    <title>Smart City BMS v3.4 - Member Dashboard</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -168,7 +168,7 @@
                 </div>
                 <div>
                     <h1 class="text-xl font-bold tracking-tight">Smart City <span class="text-blue-400">BMS</span></h1>
-                    <p class="text-xs text-slate-400">Sustainable Grid Management v3.3</p>
+                    <p class="text-xs text-slate-400">Sustainable Grid Management v3.4</p>
                 </div>
             </div>
 
@@ -341,6 +341,38 @@
                 <!-- Control / Info Panel -->
                 <div class="col-span-12 lg:col-span-4 flex flex-col gap-6">
                     
+                    <!-- My Unit (Member Enhanced View) - NEW -->
+                    <div id="my-unit-card" class="hidden bg-slate-800 border border-blue-500/30 bg-blue-500/5 rounded-xl p-5 shadow-lg flex-col gap-4">
+                        <div class="flex justify-between items-center border-b border-blue-500/20 pb-3">
+                            <div>
+                                <h3 class="text-white font-bold flex items-center gap-2"><i data-lucide="home" class="w-4 h-4 text-blue-400"></i> My Residence</h3>
+                                <p id="my-unit-id" class="text-[10px] text-blue-300 font-mono mt-0.5">Unit ID: --</p>
+                            </div>
+                            <span id="my-unit-status" class="px-2 py-1 rounded bg-emerald-500/20 text-emerald-400 text-[10px] font-bold uppercase border border-emerald-500/30">Active</span>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-700">
+                                <span class="text-[10px] text-slate-400 uppercase font-bold">Current Load</span>
+                                <div class="text-xl font-bold text-white mt-1"><span id="my-unit-load">0</span> <span class="text-sm font-normal text-slate-500">kW</span></div>
+                            </div>
+                            <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-700">
+                                <span class="text-[10px] text-slate-400 uppercase font-bold">Est. Bill/Hr</span>
+                                <div class="text-xl font-bold text-white mt-1"><span id="my-unit-bill">$0.00</span></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-[10px] text-slate-400 uppercase font-bold">Smart Control</span>
+                                <span id="my-unit-throttle-val" class="text-xs font-mono font-bold text-blue-400">100%</span>
+                            </div>
+                            <input id="my-unit-slider" type="range" min="0" max="1" step="0.1" value="1" 
+                                class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                            />
+                        </div>
+                    </div>
+
                     <!-- System Log (New Feature) -->
                     <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-lg flex flex-col gap-2 h-40">
                         <div class="flex items-center justify-between border-b border-slate-700 pb-2">
@@ -672,9 +704,9 @@
 
             // Populate Unit Select for Admin
             const select = document.getElementById('new-unit');
-            const units = state.buildings.slice(0, 50); 
+            const assignableUnits = state.buildings.filter(b => b.typeId === 'residence' || b.typeId === 'villa');
             if(select) {
-                units.forEach(u => {
+                assignableUnits.forEach(u => {
                     const opt = document.createElement('option');
                     opt.value = u.id;
                     opt.innerText = u.name;
@@ -711,7 +743,31 @@
             
             if (user.role === 'admin') {
                 document.getElementById('admin-panel-btn').classList.remove('hidden');
-            } else {
+                document.getElementById('protocols-panel').classList.remove('opacity-50', 'pointer-events-none');
+            } else if (user.role === 'member') {
+                document.getElementById('protocols-panel').classList.add('opacity-50', 'pointer-events-none');
+                
+                // Show Member Dashboard
+                const myUnitCard = document.getElementById('my-unit-card');
+                if (myUnitCard && user.assignedUnitId) {
+                    myUnitCard.classList.remove('hidden');
+                    myUnitCard.classList.add('flex');
+                    const b = state.buildings.find(b => b.id === user.assignedUnitId);
+                    if (b) {
+                        safeSetText('my-unit-id', `${b.name} (${b.id})`);
+                        
+                        // Setup Member Slider
+                        const memberSlider = document.getElementById('my-unit-slider');
+                        if (memberSlider) {
+                            memberSlider.value = b.throttle;
+                            memberSlider.oninput = (e) => {
+                                updateIndividualThrottle(b.id, e.target.value);
+                                safeSetText('my-unit-throttle-val', `${Math.round(e.target.value*100)}%`);
+                            };
+                        }
+                    }
+                }
+            } else { // Guest
                 document.getElementById('protocols-panel').classList.add('opacity-50', 'pointer-events-none');
             }
             renderWeatherControls();
@@ -951,6 +1007,27 @@
                 group.forEach(b => {
                     safeSetText(`node-load-${b.id}`, `${Math.round(b.currentLoad)}kW`);
                 });
+            }
+
+            // Update Member Dashboard (If active)
+            if (state.currentUser?.role === 'member' && state.currentUser.assignedUnitId) {
+                const b = state.buildings.find(b => b.id === state.currentUser.assignedUnitId);
+                if (b) {
+                    safeSetText('my-unit-load', Math.round(b.currentLoad));
+                    safeSetText('my-unit-bill', `$${(b.currentLoad * 0.12).toFixed(2)}`);
+                    safeSetText('my-unit-throttle-val', `${Math.round(b.throttle*100)}%`);
+                    
+                    const statusEl = document.getElementById('my-unit-status');
+                    if(statusEl) {
+                        if(b.throttle === 0) {
+                            statusEl.innerText = 'OFF';
+                            statusEl.className = "px-2 py-1 rounded bg-red-500/20 text-red-400 text-[10px] font-bold uppercase border border-red-500/30";
+                        } else {
+                            statusEl.innerText = 'ACTIVE';
+                            statusEl.className = "px-2 py-1 rounded bg-emerald-500/20 text-emerald-400 text-[10px] font-bold uppercase border border-emerald-500/30";
+                        }
+                    }
+                }
             }
         }
 
